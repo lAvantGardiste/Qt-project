@@ -1,5 +1,6 @@
 #include "parachuteview.h"
 #include <QPainter>
+#include <QPainterPath>
 #include <QtMath>
 
 ParachuteView::ParachuteView(QWidget* parent)
