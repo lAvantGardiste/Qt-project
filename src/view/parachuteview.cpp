@@ -2,11 +2,17 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QtMath>
+#include <QFontMetrics>
 
 ParachuteView::ParachuteView(QWidget* parent)
     : QWidget(parent)
 {
     setMinimumSize(400, 400);
+    // Fond blanc par défaut
+    setAutoFillBackground(true);
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, Qt::white);
+    setPalette(pal);
 }
 
 void ParachuteView::setMessage(Message* message) {
@@ -18,11 +24,46 @@ void ParachuteView::paintEvent(QPaintEvent* /*event*/) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     
-    // Centrer le parachute
-    painter.translate(width() / 2, height() / 2);
-    
-    if (m_message) {
+    if (!m_message) return;
+
+    if (m_binaryViewMode) {
+        drawBinaryView(painter);
+    } else {
+        // Centrer le parachute
+        painter.translate(width() / 2, height() / 2);
         drawParachute(painter);
+    }
+}
+
+void ParachuteView::drawBinaryView(QPainter& painter) {
+    if (!m_message) return;
+
+    QString binary = m_message->getBinaryString();
+    QFontMetrics fm(font());
+    int charWidth = fm.horizontalAdvance('0');
+    int charHeight = fm.height();
+    int charsPerLine = width() / (charWidth + 2);
+    
+    int x = 10;
+    int y = charHeight + 10;  // Ajout d'une marge en haut
+    
+    painter.setPen(Qt::black);  // Assurer que le texte est noir
+    
+    // Afficher le message original
+    painter.drawText(10, y - 5, "Message: " + m_message->getText());
+    y += charHeight + 10;  // Espace après le message
+    
+    // Afficher les bits en groupes de 7
+    int bitCount = 0;
+    for (int i = 0; i < binary.length(); ++i) {
+        if (bitCount == 7) {
+            bitCount = 0;
+            x = 10;
+            y += charHeight + 5;
+        }
+        painter.drawText(x, y, QString(binary[i]));
+        x += charWidth + 2;
+        bitCount++;
     }
 }
 

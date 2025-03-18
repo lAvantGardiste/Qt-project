@@ -28,6 +28,7 @@ private:
     ParachuteView* m_parachuteView;
     QLineEdit* m_messageEdit;
     QSpinBox* m_ringsSpinBox;
+    QSpinBox* m_sectorsSpinBox;
     QSlider* m_sectorsSlider;
 };
 

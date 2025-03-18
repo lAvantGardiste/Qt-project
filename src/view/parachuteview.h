@@ -2,6 +2,7 @@
 #define PARACHUTEVIEW_H
 
 #include <QWidget>
+#include <QPainter>
 #include "../model/message.h"
 
 class ParachuteView : public QWidget {
@@ -21,6 +22,7 @@ private:
     bool m_binaryViewMode{false};
     
     // Méthodes de dessin
+    void drawBinaryView(QPainter& painter);
     void drawParachute(QPainter& painter);
     void drawSector(QPainter& painter, int ring, int sector, bool filled);
     QPointF getTrapezePoint(int ring, int sector, bool isOuter, bool isStart) const;

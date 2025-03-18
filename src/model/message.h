@@ -22,6 +22,7 @@ public:
     // Encodage
     QVector<bool> getBinaryPattern() const;
     bool getBitAt(int ring, int sector) const;
+    QString getBinaryString() const;
 
 private:
     QString m_text;
@@ -31,6 +32,7 @@ private:
     // Méthodes privées pour l'encodage
     QVector<bool> encodeCharacter(QChar c) const;
     static int getAsciiOffset(QChar c);
+    static int getBinaryValue(QChar c);
 };
 
 #endif // MESSAGE_H 
