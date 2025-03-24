@@ -106,11 +106,19 @@ QPointF ParachuteView::getTrapezePoint(int ring, int sector, bool isOuter, bool 
     const int sectors = m_message->getSectors();
     const double anglePerSector = 2 * M_PI / sectors;
     
-    // Calculer le rayon
-    double radius = OUTER_RADIUS - (ring * RING_THICKNESS);
+    // Ajuster l'épaisseur des anneaux en fonction du nombre total d'anneaux
+    const double ringThickness = OUTER_RADIUS / m_message->getRings();
+    
+    // Calculer le rayon avec une progression non linéaire pour éviter la déformation au centre
+    double radius;
     if (isOuter) {
-        radius -= RING_THICKNESS;
+        radius = OUTER_RADIUS - (ring * ringThickness);
+    } else {
+        radius = OUTER_RADIUS - ((ring + 1) * ringThickness);
     }
+    
+    // Assurer un rayon minimum pour éviter la déformation au centre
+    radius = qMax(radius, 5.0);
     
     // Calculer l'angle
     double angle = sector * anglePerSector;

@@ -6,6 +6,7 @@
 #include <QAction>
 #include <QCheckBox>
 #include <QGroupBox>
+#include <QApplication>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -15,7 +16,7 @@ MainWindow::MainWindow(QWidget* parent)
     createMenus();
     setWindowTitle(tr("Encodage de message dans un parachute"));
 
-    // Style global pour assurer la lisibilité
+    // Style minimal pour ne pas interférer avec les flèches natives
     setStyleSheet(R"(
         QMainWindow, QWidget {
             background-color: white;
@@ -27,11 +28,7 @@ MainWindow::MainWindow(QWidget* parent)
             background-color: white;
             color: black;
             border: 1px solid #999;
-            padding: 2px;
             min-width: 80px;
-        }
-        QSpinBox {
-            padding-right: 15px;
         }
         QGroupBox {
             border: 1px solid #999;
@@ -56,28 +53,6 @@ MainWindow::MainWindow(QWidget* parent)
             width: 18px;
             margin: -2px 0;
             border-radius: 3px;
-        }
-        QSpinBox::up-button, QSpinBox::down-button {
-            border: 1px solid #999;
-            width: 16px;
-            background: #f0f0f0;
-        }
-        QSpinBox::up-button:hover, QSpinBox::down-button:hover {
-            background: #e0e0e0;
-        }
-        QSpinBox::up-arrow {
-            width: 8px;
-            height: 8px;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-bottom: 8px solid #666;
-        }
-        QSpinBox::down-arrow {
-            width: 8px;
-            height: 8px;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 8px solid #666;
         }
     )");
 }
@@ -107,22 +82,39 @@ void MainWindow::setupUI() {
     // Nombre de pistes
     auto ringsLayout = new QVBoxLayout;
     ringsLayout->addWidget(new QLabel(tr("Nombre de pistes:")));
+    
+    // SpinBox pour les pistes
     m_ringsSpinBox = new QSpinBox;
     m_ringsSpinBox->setRange(1, 10);
     m_ringsSpinBox->setValue(m_message->getRings());
+    m_ringsSpinBox->setButtonSymbols(QSpinBox::UpDownArrows);
+    m_ringsSpinBox->setAlignment(Qt::AlignCenter);
     connect(m_ringsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &MainWindow::updateRings);
     ringsLayout->addWidget(m_ringsSpinBox);
+    
+    // Slider pour les pistes
+    m_ringsSlider = new QSlider(Qt::Horizontal);
+    m_ringsSlider->setRange(1, 10);
+    m_ringsSlider->setValue(m_message->getRings());
+    connect(m_ringsSlider, &QSlider::valueChanged,
+            m_ringsSpinBox, &QSpinBox::setValue);
+    connect(m_ringsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+            m_ringsSlider, &QSlider::setValue);
+    ringsLayout->addWidget(m_ringsSlider);
+    
     controlsLayout->addLayout(ringsLayout);
     
     // Nombre de secteurs
     auto sectorsLayout = new QVBoxLayout;
     sectorsLayout->addWidget(new QLabel(tr("Nombre de secteurs:")));
     
-    // Ajout du SpinBox pour les secteurs
+    // SpinBox pour les secteurs
     m_sectorsSpinBox = new QSpinBox;
     m_sectorsSpinBox->setRange(1, 40);
     m_sectorsSpinBox->setValue(m_message->getSectors());
+    m_sectorsSpinBox->setButtonSymbols(QSpinBox::UpDownArrows);
+    m_sectorsSpinBox->setAlignment(Qt::AlignCenter);
     connect(m_sectorsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &MainWindow::updateSectors);
     sectorsLayout->addWidget(m_sectorsSpinBox);

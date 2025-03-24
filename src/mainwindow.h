@@ -29,6 +29,7 @@ private:
     QLineEdit* m_messageEdit;
     QSpinBox* m_ringsSpinBox;
     QSpinBox* m_sectorsSpinBox;
+    QSlider* m_ringsSlider;
     QSlider* m_sectorsSlider;
 };
 
