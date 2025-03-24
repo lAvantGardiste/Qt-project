@@ -7,6 +7,9 @@
 #include <QCheckBox>
 #include <QGroupBox>
 #include <QApplication>
+#include <QStyleFactory>
+#include <QFileDialog>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -16,7 +19,7 @@ MainWindow::MainWindow(QWidget* parent)
     createMenus();
     setWindowTitle(tr("Encodage de message dans un parachute"));
 
-    // Style minimal pour ne pas interférer avec les flèches natives
+    // Style avec tous les indices de débogage
     setStyleSheet(R"(
         QMainWindow, QWidget {
             background-color: white;
@@ -57,6 +60,11 @@ MainWindow::MainWindow(QWidget* parent)
     )");
 }
 
+MainWindow::~MainWindow()
+{
+    delete m_message;
+}
+
 void MainWindow::setupUI() {
     // Widget central
     auto centralWidget = new QWidget;
@@ -87,8 +95,10 @@ void MainWindow::setupUI() {
     m_ringsSpinBox = new QSpinBox;
     m_ringsSpinBox->setRange(1, 10);
     m_ringsSpinBox->setValue(m_message->getRings());
-    m_ringsSpinBox->setButtonSymbols(QSpinBox::UpDownArrows);
+    m_ringsSpinBox->setButtonSymbols(QSpinBox::PlusMinus);  // Utiliser PlusMinus au lieu de UpDownArrows
     m_ringsSpinBox->setAlignment(Qt::AlignCenter);
+    m_ringsSpinBox->setFixedWidth(100);
+    m_ringsSpinBox->setStyle(QStyleFactory::create("Fusion"));  // Utiliser le style Fusion
     connect(m_ringsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &MainWindow::updateRings);
     ringsLayout->addWidget(m_ringsSpinBox);
@@ -113,8 +123,10 @@ void MainWindow::setupUI() {
     m_sectorsSpinBox = new QSpinBox;
     m_sectorsSpinBox->setRange(1, 40);
     m_sectorsSpinBox->setValue(m_message->getSectors());
-    m_sectorsSpinBox->setButtonSymbols(QSpinBox::UpDownArrows);
+    m_sectorsSpinBox->setButtonSymbols(QSpinBox::PlusMinus);  // Utiliser PlusMinus au lieu de UpDownArrows
     m_sectorsSpinBox->setAlignment(Qt::AlignCenter);
+    m_sectorsSpinBox->setFixedWidth(100);
+    m_sectorsSpinBox->setStyle(QStyleFactory::create("Fusion"));  // Utiliser le style Fusion
     connect(m_sectorsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &MainWindow::updateSectors);
     sectorsLayout->addWidget(m_sectorsSpinBox);
@@ -150,6 +162,18 @@ void MainWindow::setupUI() {
 void MainWindow::createMenus() {
     auto fileMenu = menuBar()->addMenu(tr("&Fichier"));
     
+    auto openAction = new QAction(tr("&Ouvrir..."), this);
+    openAction->setShortcuts(QKeySequence::Open);
+    connect(openAction, &QAction::triggered, this, &MainWindow::openFile);
+    fileMenu->addAction(openAction);
+    
+    auto saveAction = new QAction(tr("&Enregistrer..."), this);
+    saveAction->setShortcuts(QKeySequence::Save);
+    connect(saveAction, &QAction::triggered, this, &MainWindow::saveFile);
+    fileMenu->addAction(saveAction);
+    
+    fileMenu->addSeparator();
+    
     auto quitAction = new QAction(tr("&Quitter"), this);
     quitAction->setShortcuts(QKeySequence::Quit);
     connect(quitAction, &QAction::triggered, this, &QWidget::close);
@@ -173,4 +197,61 @@ void MainWindow::updateSectors(int value) {
 
 void MainWindow::toggleBinaryView(bool enabled) {
     m_parachuteView->setBinaryViewMode(enabled);
-} 
+}
+
+void MainWindow::openFile() {
+    QString fileName = QFileDialog::getOpenFileName(this,
+        tr("Ouvrir un fichier de configuration"), "",
+        tr("Fichiers de parachute (*.para);;Tous les fichiers (*)"));
+        
+    if (fileName.isEmpty())
+        return;
+        
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(this, tr("Erreur de lecture"),
+                             tr("Impossible d'ouvrir le fichier %1:\n%2.")
+                             .arg(fileName)
+                             .arg(file.errorString()));
+        return;
+    }
+
+    QTextStream in(&file);
+    QString message = in.readLine();
+    int rings = in.readLine().toInt();
+    int sectors = in.readLine().toInt();
+    
+    m_messageEdit->setText(message);
+    m_ringsSpinBox->setValue(rings);
+    m_sectorsSpinBox->setValue(sectors);
+    
+    file.close();
+}
+
+void MainWindow::saveFile() {
+    QString fileName = QFileDialog::getSaveFileName(this,
+        tr("Enregistrer la configuration"), "",
+        tr("Fichiers de parachute (*.para);;Tous les fichiers (*)"));
+        
+    if (fileName.isEmpty())
+        return;
+    
+    if (!fileName.endsWith(".para"))
+        fileName += ".para";
+        
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly)) {
+        QMessageBox::warning(this, tr("Erreur d'écriture"),
+                             tr("Impossible d'enregistrer le fichier %1:\n%2.")
+                             .arg(fileName)
+                             .arg(file.errorString()));
+        return;
+    }
+
+    QTextStream out(&file);
+    out << m_message->getText() << "\n";
+    out << m_message->getRings() << "\n";
+    out << m_message->getSectors() << "\n";
+    
+    file.close();
+}
