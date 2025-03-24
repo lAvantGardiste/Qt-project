@@ -13,12 +13,15 @@ class MainWindow : public QMainWindow {
 
 public:
     explicit MainWindow(QWidget* parent = nullptr);
+    ~MainWindow();
 
 private slots:
     void updateMessage();
     void updateRings(int value);
     void updateSectors(int value);
     void toggleBinaryView(bool enabled);
+    void openFile();
+    void saveFile();
 
 private:
     void setupUI();
@@ -33,4 +36,4 @@ private:
     QSlider* m_sectorsSlider;
 };
 
-#endif // MAINWINDOW_H 
+#endif // MAINWINDOW_H
