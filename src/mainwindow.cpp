@@ -1,10 +1,13 @@
 #include "mainwindow.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QGridLayout>
 #include <QLabel>
+#include <QSpinBox>
+#include <QSlider>
+#include <QCheckBox>
 #include <QMenuBar>
 #include <QAction>
-#include <QCheckBox>
 #include <QGroupBox>
 #include <QApplication>
 #include <QStyleFactory>
@@ -12,6 +15,7 @@
 #include <QMessageBox>
 #include <QDir>
 #include <QDataStream>
+#include "view/parachuteview.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -114,6 +118,10 @@ void MainWindow::setupUI()
     m_ringsSpinBox = new QSpinBox(controlsGroup);
     m_ringsSpinBox->setRange(1, 10);
     m_ringsSpinBox->setValue(5);
+    m_ringsSpinBox->setButtonSymbols(QSpinBox::PlusMinus);
+    m_ringsSpinBox->setAlignment(Qt::AlignCenter);
+    m_ringsSpinBox->setFixedWidth(100);
+    m_ringsSpinBox->setStyle(QStyleFactory::create("Fusion"));
     m_ringsSlider = new QSlider(Qt::Horizontal, controlsGroup);
     m_ringsSlider->setRange(1, 10);
     m_ringsSlider->setValue(5);
@@ -123,6 +131,10 @@ void MainWindow::setupUI()
     m_sectorsSpinBox = new QSpinBox(controlsGroup);
     m_sectorsSpinBox->setRange(4, 32);
     m_sectorsSpinBox->setValue(21);
+    m_sectorsSpinBox->setButtonSymbols(QSpinBox::PlusMinus);
+    m_sectorsSpinBox->setAlignment(Qt::AlignCenter);
+    m_sectorsSpinBox->setFixedWidth(100);
+    m_sectorsSpinBox->setStyle(QStyleFactory::create("Fusion"));
     m_sectorsSlider = new QSlider(Qt::Horizontal, controlsGroup);
     m_sectorsSlider->setRange(4, 32);
     m_sectorsSlider->setValue(21);
