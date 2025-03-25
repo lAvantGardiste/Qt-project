@@ -13,6 +13,7 @@ public:
     
     void setMessage(Message* message);
     void setBinaryViewMode(bool enabled) { m_binaryViewMode = enabled; update(); }
+    bool isBinaryViewMode() const { return m_binaryViewMode; }
 
 protected:
     void paintEvent(QPaintEvent* event) override;

@@ -5,6 +5,8 @@
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QSlider>
+#include <QActionGroup>
+#include <QTranslator>
 #include "model/message.h"
 #include "view/parachuteview.h"
 
@@ -12,7 +14,7 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget* parent = nullptr);
+    MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
 private slots:
@@ -20,12 +22,15 @@ private slots:
     void updateRings(int value);
     void updateSectors(int value);
     void toggleBinaryView(bool enabled);
+    void changeLanguage(QAction* action);
+    void showAbout();
     void openFile();
     void saveFile();
 
 private:
     void setupUI();
     void createMenus();
+    void loadTranslations();
     
     Message* m_message;
     ParachuteView* m_parachuteView;
@@ -34,6 +39,9 @@ private:
     QSpinBox* m_sectorsSpinBox;
     QSlider* m_ringsSlider;
     QSlider* m_sectorsSlider;
+    QTranslator m_translator;
+    QAction* m_frenchAction;
+    QAction* m_englishAction;
 };
 
 #endif // MAINWINDOW_H

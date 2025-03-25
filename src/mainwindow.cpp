@@ -10,6 +10,8 @@
 #include <QStyleFactory>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QDir>
+#include <QDataStream>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -19,10 +21,34 @@ MainWindow::MainWindow(QWidget* parent)
     createMenus();
     setWindowTitle(tr("Encodage de message dans un parachute"));
 
-    // Style avec tous les indices de débogage
+    // Style avec menus visibles
     setStyleSheet(R"(
         QMainWindow, QWidget {
             background-color: white;
+        }
+        QMenuBar {
+            background-color: white;
+            color: black;
+            border-bottom: 1px solid #999;
+        }
+        QMenuBar::item {
+            background-color: white;
+            color: black;
+            padding: 4px 10px;
+        }
+        QMenuBar::item:selected {
+            background-color: #e0e0e0;
+        }
+        QMenu {
+            background-color: white;
+            color: black;
+            border: 1px solid #999;
+        }
+        QMenu::item {
+            padding: 4px 20px;
+        }
+        QMenu::item:selected {
+            background-color: #e0e0e0;
         }
         QLabel, QCheckBox, QGroupBox {
             color: black;
@@ -160,6 +186,7 @@ void MainWindow::setupUI() {
 }
 
 void MainWindow::createMenus() {
+    // File Menu
     auto fileMenu = menuBar()->addMenu(tr("&Fichier"));
     
     auto openAction = new QAction(tr("&Ouvrir..."), this);
@@ -178,6 +205,54 @@ void MainWindow::createMenus() {
     quitAction->setShortcuts(QKeySequence::Quit);
     connect(quitAction, &QAction::triggered, this, &QWidget::close);
     fileMenu->addAction(quitAction);
+
+    // Edit Menu
+    auto editMenu = menuBar()->addMenu(tr("&Edition"));
+    
+    auto copyAction = new QAction(tr("&Copier"), this);
+    copyAction->setShortcuts(QKeySequence::Copy);
+    connect(copyAction, &QAction::triggered, m_messageEdit, &QLineEdit::copy);
+    editMenu->addAction(copyAction);
+    
+    auto pasteAction = new QAction(tr("Co&ller"), this);
+    pasteAction->setShortcuts(QKeySequence::Paste);
+    connect(pasteAction, &QAction::triggered, m_messageEdit, &QLineEdit::paste);
+    editMenu->addAction(pasteAction);
+
+    // View Menu
+    auto viewMenu = menuBar()->addMenu(tr("&Affichage"));
+    
+    auto binaryViewAction = new QAction(tr("Vue &binaire"), this);
+    binaryViewAction->setCheckable(true);
+    connect(binaryViewAction, &QAction::toggled, this, &MainWindow::toggleBinaryView);
+    viewMenu->addAction(binaryViewAction);
+
+    // Language Menu
+    auto langMenu = menuBar()->addMenu(tr("&Langue"));
+    
+    m_frenchAction = new QAction(tr("&Français"), this);
+    m_frenchAction->setCheckable(true);
+    m_frenchAction->setChecked(true);
+    langMenu->addAction(m_frenchAction);
+    
+    m_englishAction = new QAction(tr("&English"), this);
+    m_englishAction->setCheckable(true);
+    langMenu->addAction(m_englishAction);
+    
+    // Make language actions exclusive
+    auto langGroup = new QActionGroup(this);
+    langGroup->addAction(m_frenchAction);
+    langGroup->addAction(m_englishAction);
+    langGroup->setExclusive(true);
+    
+    connect(langGroup, &QActionGroup::triggered, this, &MainWindow::changeLanguage);
+
+    // Help Menu
+    auto helpMenu = menuBar()->addMenu(tr("&Aide"));
+    
+    auto aboutAction = new QAction(tr("À &propos"), this);
+    connect(aboutAction, &QAction::triggered, this, &MainWindow::showAbout);
+    helpMenu->addAction(aboutAction);
 }
 
 void MainWindow::updateMessage() {
@@ -199,59 +274,157 @@ void MainWindow::toggleBinaryView(bool enabled) {
     m_parachuteView->setBinaryViewMode(enabled);
 }
 
+void MainWindow::changeLanguage(QAction* action) {
+    QString language = action->text().contains("English") ? "en" : "fr";
+    
+    // Remove old translator if it exists
+    qApp->removeTranslator(&m_translator);
+    
+    // Load new translation
+    if (language == "en") {
+        if (m_translator.load(":/translations/parachute_en.qm")) {
+            qApp->installTranslator(&m_translator);
+        }
+    }
+    
+    // Update window title
+    setWindowTitle(language == "en" ? tr("Message Encoding in a Parachute") : tr("Encodage de message dans un parachute"));
+
+    // Update all group boxes
+    auto messageGroup = centralWidget()->findChild<QGroupBox*>();
+    if (messageGroup) messageGroup->setTitle(tr("Message"));
+
+    auto controlsGroup = centralWidget()->findChildren<QGroupBox*>().at(1);
+    if (controlsGroup) controlsGroup->setTitle(language == "en" ? tr("Parameters") : tr("Paramètres"));
+
+    auto viewGroup = centralWidget()->findChildren<QGroupBox*>().at(2);
+    if (viewGroup) viewGroup->setTitle(language == "en" ? tr("Display") : tr("Affichage"));
+
+    // Update labels
+    auto labels = centralWidget()->findChildren<QLabel*>();
+    for (auto label : labels) {
+        if (label->text().contains("tracks") || label->text().contains("pistes"))
+            label->setText(language == "en" ? tr("Number of tracks:") : tr("Nombre de pistes:"));
+        else if (label->text().contains("sectors") || label->text().contains("secteurs"))
+            label->setText(language == "en" ? tr("Number of sectors:") : tr("Nombre de secteurs:"));
+    }
+
+    // Update checkbox
+    auto binaryViewCheck = centralWidget()->findChild<QCheckBox*>();
+    if (binaryViewCheck) binaryViewCheck->setText(language == "en" ? tr("Binary View") : tr("Vue binaire"));
+
+    // Update line edit placeholder
+    if (m_messageEdit) {
+        m_messageEdit->setPlaceholderText(language == "en" ? tr("Enter your message here") : tr("Entrez votre message ici"));
+    }
+
+    // Store the current checked states before clearing menus
+    bool wasEnglish = language == "en";
+
+    // Update menus
+    menuBar()->clear();
+    createMenus();
+
+    // Restore the correct checked state
+    if (wasEnglish) {
+        m_englishAction->setChecked(true);
+    } else {
+        m_frenchAction->setChecked(true);
+    }
+
+    // Force update of the parachute view
+    if (m_parachuteView) m_parachuteView->update();
+}
+
+void MainWindow::showAbout() {
+    QMessageBox::about(this, tr("À propos"),
+        tr("Encodage de message dans un parachute\n\n"
+           "Version 1.0\n"
+           "© 2024 ENSI Caen\n\n"
+           "Programme permettant d'encoder des messages dans un parachute "
+           "en utilisant une représentation binaire."));
+}
+
+void MainWindow::loadTranslations() {
+    // Default to French - no translation file needed as it's the default
+    // English translations will be loaded when user switches language
+}
+
 void MainWindow::openFile() {
     QString fileName = QFileDialog::getOpenFileName(this,
-        tr("Ouvrir un fichier de configuration"), "",
-        tr("Fichiers de parachute (*.para);;Tous les fichiers (*)"));
+        tr("Ouvrir un fichier"), "",
+        tr("Fichiers parachute (*.prc);;Tous les fichiers (*)"));
         
     if (fileName.isEmpty())
         return;
         
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(this, tr("Erreur de lecture"),
-                             tr("Impossible d'ouvrir le fichier %1:\n%2.")
-                             .arg(fileName)
-                             .arg(file.errorString()));
+        QMessageBox::warning(this, tr("Erreur"),
+            tr("Impossible d'ouvrir le fichier %1:\n%2.")
+            .arg(QDir::toNativeSeparators(fileName),
+                 file.errorString()));
         return;
     }
 
-    QTextStream in(&file);
-    QString message = in.readLine();
-    int rings = in.readLine().toInt();
-    int sectors = in.readLine().toInt();
+    QDataStream in(&file);
+    in.setVersion(QDataStream::Qt_5_0);
+
+    QString message;
+    int rings, sectors;
+    bool binaryView;
+    
+    in >> message >> rings >> sectors >> binaryView;
+    
+    if (in.status() != QDataStream::Ok) {
+        QMessageBox::warning(this, tr("Erreur"),
+            tr("Erreur lors de la lecture du fichier %1")
+            .arg(QDir::toNativeSeparators(fileName)));
+        return;
+    }
     
     m_messageEdit->setText(message);
     m_ringsSpinBox->setValue(rings);
     m_sectorsSpinBox->setValue(sectors);
-    
-    file.close();
+    // Find and toggle the binary view action if needed
+    auto viewMenu = menuBar()->actions().at(2)->menu();
+    if (viewMenu) {
+        auto binaryViewAction = viewMenu->actions().first();
+        if (binaryViewAction) {
+            binaryViewAction->setChecked(binaryView);
+        }
+    }
 }
 
 void MainWindow::saveFile() {
     QString fileName = QFileDialog::getSaveFileName(this,
-        tr("Enregistrer la configuration"), "",
-        tr("Fichiers de parachute (*.para);;Tous les fichiers (*)"));
+        tr("Enregistrer le fichier"), "",
+        tr("Fichiers parachute (*.prc);;Tous les fichiers (*)"));
         
     if (fileName.isEmpty())
         return;
     
-    if (!fileName.endsWith(".para"))
-        fileName += ".para";
-        
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly)) {
-        QMessageBox::warning(this, tr("Erreur d'écriture"),
-                             tr("Impossible d'enregistrer le fichier %1:\n%2.")
-                             .arg(fileName)
-                             .arg(file.errorString()));
+        QMessageBox::warning(this, tr("Erreur"),
+            tr("Impossible d'enregistrer le fichier %1:\n%2.")
+            .arg(QDir::toNativeSeparators(fileName),
+                 file.errorString()));
         return;
     }
 
-    QTextStream out(&file);
-    out << m_message->getText() << "\n";
-    out << m_message->getRings() << "\n";
-    out << m_message->getSectors() << "\n";
+    QDataStream out(&file);
+    out.setVersion(QDataStream::Qt_5_0);
     
-    file.close();
+    // Save the current state
+    out << m_messageEdit->text()
+        << m_ringsSpinBox->value()
+        << m_sectorsSpinBox->value()
+        << m_parachuteView->isBinaryViewMode();
+        
+    if (out.status() != QDataStream::Ok) {
+        QMessageBox::warning(this, tr("Erreur"),
+            tr("Erreur lors de l'écriture du fichier %1")
+            .arg(QDir::toNativeSeparators(fileName)));
+    }
 }
