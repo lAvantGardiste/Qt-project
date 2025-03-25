@@ -12,7 +12,7 @@ public:
     // Getters et setters
     QString getText() const { return m_text; }
     void setText(const QString& text);
-    
+
     // Paramètres du parachute
     void setRings(int rings);
     void setSectors(int sectors);
@@ -27,7 +27,7 @@ public:
 private:
     QString m_text;
     int m_rings{5};      // Nombre de pistes (anneaux concentriques)
-    int m_sectors{20};   // Nombre de secteurs
+    int m_sectors{21};   // Nombre de secteurs
     
     // Méthodes privées pour l'encodage
     QVector<bool> encodeCharacter(QChar c) const;

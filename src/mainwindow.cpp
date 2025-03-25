@@ -91,98 +91,78 @@ MainWindow::~MainWindow()
     delete m_message;
 }
 
-void MainWindow::setupUI() {
-    // Widget central
-    auto centralWidget = new QWidget;
+void MainWindow::setupUI()
+{
+    auto centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
     
-    // Layout principal
-    auto mainLayout = new QVBoxLayout(centralWidget);
+    auto layout = new QVBoxLayout(centralWidget);
     
-    // Zone de saisie du message
-    auto messageGroup = new QGroupBox(tr("Message"));
-    auto messageLayout = new QHBoxLayout(messageGroup);
-    m_messageEdit = new QLineEdit;
-    m_messageEdit->setText(m_message->getText());
-    m_messageEdit->setPlaceholderText(tr("Entrez votre message ici"));
-    connect(m_messageEdit, &QLineEdit::textChanged, this, &MainWindow::updateMessage);
+    // Message group
+    auto messageGroup = new QGroupBox(tr("Message"), centralWidget);
+    auto messageLayout = new QVBoxLayout(messageGroup);
+    m_messageEdit = new QLineEdit(messageGroup);
+    m_messageEdit->setPlaceholderText(tr("Enter your message here"));
     messageLayout->addWidget(m_messageEdit);
-    mainLayout->addWidget(messageGroup);
     
-    // Contrôles
-    auto controlsGroup = new QGroupBox(tr("Paramètres"));
-    auto controlsLayout = new QHBoxLayout(controlsGroup);
+    // Parameters group
+    auto controlsGroup = new QGroupBox(tr("Parameters"), centralWidget);
+    auto controlsLayout = new QGridLayout(controlsGroup);
     
-    // Nombre de pistes
-    auto ringsLayout = new QVBoxLayout;
-    ringsLayout->addWidget(new QLabel(tr("Nombre de pistes:")));
-    
-    // SpinBox pour les pistes
-    m_ringsSpinBox = new QSpinBox;
+    // Rings controls
+    auto ringsLabel = new QLabel(tr("Number of tracks:"), controlsGroup);
+    m_ringsSpinBox = new QSpinBox(controlsGroup);
     m_ringsSpinBox->setRange(1, 10);
-    m_ringsSpinBox->setValue(m_message->getRings());
-    m_ringsSpinBox->setButtonSymbols(QSpinBox::PlusMinus);  // Utiliser PlusMinus au lieu de UpDownArrows
-    m_ringsSpinBox->setAlignment(Qt::AlignCenter);
-    m_ringsSpinBox->setFixedWidth(100);
-    m_ringsSpinBox->setStyle(QStyleFactory::create("Fusion"));  // Utiliser le style Fusion
-    connect(m_ringsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &MainWindow::updateRings);
-    ringsLayout->addWidget(m_ringsSpinBox);
-    
-    // Slider pour les pistes
-    m_ringsSlider = new QSlider(Qt::Horizontal);
+    m_ringsSpinBox->setValue(5);
+    m_ringsSlider = new QSlider(Qt::Horizontal, controlsGroup);
     m_ringsSlider->setRange(1, 10);
-    m_ringsSlider->setValue(m_message->getRings());
-    connect(m_ringsSlider, &QSlider::valueChanged,
-            m_ringsSpinBox, &QSpinBox::setValue);
-    connect(m_ringsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            m_ringsSlider, &QSlider::setValue);
-    ringsLayout->addWidget(m_ringsSlider);
+    m_ringsSlider->setValue(5);
     
-    controlsLayout->addLayout(ringsLayout);
+    // Sectors controls
+    auto sectorsLabel = new QLabel(tr("Number of sectors:"), controlsGroup);
+    m_sectorsSpinBox = new QSpinBox(controlsGroup);
+    m_sectorsSpinBox->setRange(4, 32);
+    m_sectorsSpinBox->setValue(21);
+    m_sectorsSlider = new QSlider(Qt::Horizontal, controlsGroup);
+    m_sectorsSlider->setRange(4, 32);
+    m_sectorsSlider->setValue(21);
     
-    // Nombre de secteurs
-    auto sectorsLayout = new QVBoxLayout;
-    sectorsLayout->addWidget(new QLabel(tr("Nombre de secteurs:")));
+    controlsLayout->addWidget(ringsLabel, 0, 0);
+    controlsLayout->addWidget(m_ringsSpinBox, 0, 1);
+    controlsLayout->addWidget(m_ringsSlider, 1, 0, 1, 2);
+    controlsLayout->addWidget(sectorsLabel, 2, 0);
+    controlsLayout->addWidget(m_sectorsSpinBox, 2, 1);
+    controlsLayout->addWidget(m_sectorsSlider, 3, 0, 1, 2);
     
-    // SpinBox pour les secteurs
-    m_sectorsSpinBox = new QSpinBox;
-    m_sectorsSpinBox->setRange(1, 40);
-    m_sectorsSpinBox->setValue(m_message->getSectors());
-    m_sectorsSpinBox->setButtonSymbols(QSpinBox::PlusMinus);  // Utiliser PlusMinus au lieu de UpDownArrows
-    m_sectorsSpinBox->setAlignment(Qt::AlignCenter);
-    m_sectorsSpinBox->setFixedWidth(100);
-    m_sectorsSpinBox->setStyle(QStyleFactory::create("Fusion"));  // Utiliser le style Fusion
-    connect(m_sectorsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &MainWindow::updateSectors);
-    sectorsLayout->addWidget(m_sectorsSpinBox);
+    // Display group
+    auto viewGroup = new QGroupBox(tr("Display"), centralWidget);
+    auto viewLayout = new QVBoxLayout(viewGroup);
     
-    // Slider pour les secteurs
-    m_sectorsSlider = new QSlider(Qt::Horizontal);
-    m_sectorsSlider->setRange(1, 40);
-    m_sectorsSlider->setValue(m_message->getSectors());
-    connect(m_sectorsSlider, &QSlider::valueChanged,
-            m_sectorsSpinBox, &QSpinBox::setValue);
-    connect(m_sectorsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            m_sectorsSlider, &QSlider::setValue);
-    sectorsLayout->addWidget(m_sectorsSlider);
-    
-    controlsLayout->addLayout(sectorsLayout);
-    mainLayout->addWidget(controlsGroup);
-    
-    // Vue binaire
-    auto viewGroup = new QGroupBox(tr("Affichage"));
-    auto viewLayout = new QHBoxLayout(viewGroup);
-    auto binaryViewCheck = new QCheckBox(tr("Vue binaire"));
-    connect(binaryViewCheck, &QCheckBox::toggled,
-            this, &MainWindow::toggleBinaryView);
+    // Binary view checkbox
+    auto binaryViewCheck = new QCheckBox(tr("Binary View"), viewGroup);
     viewLayout->addWidget(binaryViewCheck);
-    mainLayout->addWidget(viewGroup);
     
-    // Vue du parachute
-    m_parachuteView = new ParachuteView;
-    m_parachuteView->setMessage(m_message);
-    mainLayout->addWidget(m_parachuteView);
+    // Parachute view
+    m_parachuteView = new ParachuteView(m_message, viewGroup);
+    viewLayout->addWidget(m_parachuteView);
+    
+    // Add all groups to main layout
+    layout->addWidget(messageGroup);
+    layout->addWidget(controlsGroup);
+    layout->addWidget(viewGroup);
+    
+    // Connect signals
+    connect(m_messageEdit, &QLineEdit::textChanged, this, &MainWindow::updateMessage);
+    connect(m_ringsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &MainWindow::updateRings);
+    connect(m_ringsSlider, &QSlider::valueChanged, m_ringsSpinBox, &QSpinBox::setValue);
+    connect(m_ringsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), m_ringsSlider, &QSlider::setValue);
+    connect(m_sectorsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &MainWindow::updateSectors);
+    connect(m_sectorsSlider, &QSlider::valueChanged, m_sectorsSpinBox, &QSpinBox::setValue);
+    connect(m_sectorsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), m_sectorsSlider, &QSlider::setValue);
+    connect(binaryViewCheck, &QCheckBox::toggled, m_parachuteView, &ParachuteView::setBinaryViewMode);
+    
+    // Initial update
+    updateMessage();
 }
 
 void MainWindow::createMenus() {
